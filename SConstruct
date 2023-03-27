@@ -365,6 +365,7 @@ experimental_optimizations = [
     'tbaa',
     'treevec',
     'vishidden',
+    'noplt',
 ]
 experimental_optimization_choices = ['*']
 experimental_optimization_choices.extend("+" + opt for opt in experimental_optimizations)
@@ -2602,7 +2603,7 @@ if debugBuild:
 else:
     env.AppendUnique(CPPDEFINES=['NDEBUG'])
 
-# Normalize our experimental optimiation and hardening flags
+# Normalize our experimental optimization and hardening flags
 selected_experimental_optimizations = set()
 for suboption in get_option('experimental-optimization'):
     if suboption == "*":
@@ -3103,6 +3104,9 @@ if env.TargetOSIs('posix'):
 
         if "treevec" in selected_experimental_optimizations:
             env.Append(CCFLAGS=["-ftree-vectorize"])
+
+        if "noplt" in selected_experimental_optimizations:
+            env.Append(CCFLAGS=["-fno-plt"])
 
 wiredtiger = False
 if get_option('wiredtiger') == 'on':
