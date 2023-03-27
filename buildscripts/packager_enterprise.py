@@ -323,67 +323,7 @@ Description: MongoDB packages
 
 def move_repos_into_place(src, dst):
     """Move the repos into place."""
-    # Find all the stuff in src/*, move it to a freshly-created
-    # directory beside dst, then play some games with symlinks so that
-    # dst is a name the new stuff and dst+".old" names the previous
-    # one.  This feels like a lot of hooey for something so trivial.
-
-    # First, make a crispy fresh new directory to put the stuff in.
-    idx = 0
-    while True:
-        date_suffix = time.strftime("%Y-%m-%d")
-        dname = dst + ".%s.%d" % (date_suffix, idx)
-        try:
-            os.mkdir(dname)
-            break
-        except OSError:
-            exc = sys.exc_info()[1]
-            if exc.errno == errno.EEXIST:
-                pass
-            else:
-                raise exc
-        idx = idx + 1
-
-    # Put the stuff in our new directory.
-    for src_file in os.listdir(src):
-        packager.sysassert(["cp", "-rv", src + "/" + src_file, dname])
-
-    # Make a symlink to the new directory; the symlink will be renamed
-    # to dst shortly.
-    idx = 0
-    while True:
-        tmpnam = dst + ".TMP.%d" % idx
-        try:
-            os.symlink(dname, tmpnam)
-            break
-        except OSError:  # as exc: # Python >2.5
-            exc = sys.exc_info()[1]
-            if exc.errno == errno.EEXIST:
-                pass
-            else:
-                raise exc
-        idx = idx + 1
-
-    # Make a symlink to the old directory; this symlink will be
-    # renamed shortly, too.
-    oldnam = None
-    if os.path.exists(dst):
-        idx = 0
-        while True:
-            oldnam = dst + ".old.%d" % idx
-            try:
-                os.symlink(os.readlink(dst), oldnam)
-                break
-            except OSError:  # as exc: # Python >2.5
-                exc = sys.exc_info()[1]
-                if exc.errno == errno.EEXIST:
-                    pass
-                else:
-                    raise exc
-
-    os.rename(tmpnam, dst)
-    if oldnam:
-        os.rename(oldnam, dst + ".old")
+    packager.move_repos_into_place(src, dst)
 
 
 if __name__ == "__main__":
