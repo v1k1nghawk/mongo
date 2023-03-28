@@ -6206,6 +6206,7 @@ Export([
     'get_option',
     'has_option',
     'http_client',
+    'noshell',
     'jsEngine',
     'module_sconscripts',
     'optBuild',

@@ -3,7 +3,7 @@
 Import([
     'env',
     'get_option',
-    'has_option',
+    'noshell',
     'jsEngine',
     'version_parts',
     'version_extra',
@@ -255,7 +255,7 @@ env.Library(
     ],
 )
 
-if not has_option('noshell') and jsEngine:
+if not noshell and jsEngine:
 
     env.Library(
         target="mongo_initializers",
