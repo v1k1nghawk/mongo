@@ -78,9 +78,7 @@ namespace {
  * of data.
  */
 uint32_t addDataToChecksum(const void* startOfData, size_t sizeOfData, uint32_t checksum) {
-    unsigned newChecksum;
-    MurmurHash3_x86_32(startOfData, sizeOfData, checksum, &newChecksum);
-    return newChecksum;
+    return static_cast<uint32_t>(XXH32(startOfData, sizeOfData, checksum));
 }
 
 void checkNoExternalSortOnMongos(const SortOptions& opts) {

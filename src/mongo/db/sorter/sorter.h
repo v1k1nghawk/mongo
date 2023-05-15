@@ -30,6 +30,7 @@
 #pragma once
 
 #include <MurmurHash3.h>
+#include <xxhash.h>
 
 #include <boost/filesystem/path.hpp>
 #include <deque>

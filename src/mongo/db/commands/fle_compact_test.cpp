@@ -30,6 +30,7 @@
 #include "mongo/platform/basic.h"
 
 #include <MurmurHash3.h>
+#include <xxhash.h>
 #include <map>
 
 #include "mongo/crypto/fle_crypto.h"

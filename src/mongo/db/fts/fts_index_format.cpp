@@ -30,6 +30,7 @@
 #include "mongo/platform/basic.h"
 
 #include <MurmurHash3.h>
+#include <xxhash.h>
 
 #include "mongo/base/init.h"
 #include "mongo/db/bson/dotted_path_support.h"
@@ -192,11 +193,10 @@ void FTSIndexFormat::_appendIndexKey(KeyStringBuilder& keyString,
             keyString.appendString(term);
         } else {
             union {
-                uint64_t hash[2];
+                XXH128_hash_t hash;
                 char data[16];
             } t;
-            uint32_t seed = 0;
-            MurmurHash3_x64_128(term.data(), term.size(), seed, t.hash);
+            t.hash = XXH3_128bits(term.data(), term.size());
             string keySuffix = hexblob::encodeLower(t.data, sizeof(t.data));
             invariant(termKeySuffixLengthV2 == keySuffix.size());
             keyString.appendString(term.substr(0, termKeyPrefixLengthV2) + keySuffix);

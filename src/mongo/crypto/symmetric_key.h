@@ -30,6 +30,7 @@
 #pragma once
 
 #include <MurmurHash3.h>
+#include <xxhash.h>
 #include <cstdint>
 #include <memory>
 
@@ -74,9 +75,7 @@ public:
     struct Hash {
         std::size_t operator()(const SymmetricKeyId& keyid) const {
             auto rep = keyid.toString();
-            uint32_t hash;
-            MurmurHash3_x86_32(rep.data(), rep.size(), 0, &hash);
-            return hash;
+            return static_cast<size_t>(XXH32(rep.data(), rep.size(), 0));
         }
     };
 

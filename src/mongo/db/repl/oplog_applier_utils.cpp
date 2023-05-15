@@ -100,7 +100,7 @@ void processCrudOp(OperationContext* opCtx,
         BSONElementComparator elementHasher(BSONElementComparator::FieldNamesMode::kIgnore,
                                             collProperties.collator);
         const size_t idHash = elementHasher.hash(id);
-        MurmurHash3_x86_32(&idHash, sizeof(idHash), *hash, hash);
+        hash = static_cast<uint32_t>(XXH32(&idHash, sizeof(idHash), static_cast<XXH32_hash_t>(*hash)));
     }
 
     if (op->getOpType() == OpTypeEnum::kInsert && collProperties.isCapped) {

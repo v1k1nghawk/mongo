@@ -32,6 +32,7 @@
 #include "mongo/base/simple_string_data_comparator.h"
 
 #include <MurmurHash3.h>
+#include <xxhash.h>
 
 #include "mongo/base/data_type_endian.h"
 #include "mongo/base/data_view.h"
@@ -57,6 +58,19 @@ size_t murmur3<8>(StringData str, size_t seed) {
     return static_cast<size_t>(ConstDataView(hash).read<LittleEndian<std::uint64_t>>());
 }
 
+template <int SizeofSizeT>
+size_t xxhash(StringData str, size_t seed);
+
+template <>
+size_t xxhash<4>(StringData str, size_t seed) {
+    return static_cast<size_t>(XXH32(str.rawData(), str.size(), static_cast<XXH32_hash_t>(seed)));
+}
+
+template <>
+size_t xxhash<8>(StringData str, size_t seed) {
+    return static_cast<size_t>(XXH3_64bits_withSeed(str.rawData(), str.size(), static_cast<XXH64_hash_t>(seed)));
+}
+
 }  // namespace
 
 const SimpleStringDataComparator SimpleStringDataComparator::kInstance{};
@@ -66,7 +80,7 @@ int SimpleStringDataComparator::compare(StringData left, StringData right) const
 }
 
 void SimpleStringDataComparator::hash_combine(size_t& seed, StringData stringToHash) const {
-    seed = murmur3<sizeof(size_t)>(stringToHash, seed);
+    seed = xxhash<sizeof(size_t)>(stringToHash, seed);
 }
 
 }  // namespace mongo

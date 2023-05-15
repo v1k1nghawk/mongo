@@ -29,6 +29,7 @@
 
 
 #include <MurmurHash3.h>
+#include <xxhash.h>
 #include <algorithm>
 #include <array>
 #include <boost/smart_ptr/intrusive_ptr.hpp>

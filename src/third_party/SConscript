@@ -330,6 +330,10 @@ murmurEnv = env.Clone()
 murmurEnv.InjectThirdParty(libraries=['fmt'])
 murmurEnv.SConscript('murmurhash3/SConscript', exports={'env': murmurEnv})
 
+xxhashEnv = env.Clone()
+xxhashEnv.InjectThirdParty(libraries=['fmt'])
+xxhashEnv.SConscript('xxHash/SConscript', exports={'env': xxhashEnv})
+
 s2Env = env.Clone()
 s2Env.InjectThirdParty(libraries=[
     's2',

@@ -32,6 +32,7 @@
 #include "mongo/db/s/resharding/resharding_oplog_batch_preparer.h"
 
 #include <MurmurHash3.h>
+#include <xxhash.h>
 
 #include "mongo/bson/bsonelement_comparator.h"
 #include "mongo/db/ops/write_ops_retryability.h"
@@ -280,8 +281,8 @@ void ReshardingOplogBatchPreparer::_appendCrudOpToWriterVector(const OplogEntry*
 
     const size_t idHash = elementHasher.hash(op->getIdElement());
 
-    uint32_t hash = 0;
-    MurmurHash3_x86_32(&idHash, sizeof(idHash), hash, &hash);
+    uint32_t hash = static_cast<uint32_t>(XXH32(&idHash, sizeof(idHash), 0));
+
 
     _appendOpToWriterVector(hash, op, writerVectors);
 }

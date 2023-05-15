@@ -957,7 +957,7 @@ void Value::hash_combine(size_t& seed,
         case Code:
         case Symbol: {
             StringData sd = getRawData();
-            MurmurHash3_x86_32(sd.rawData(), sd.size(), seed, &seed);
+            seed = static_cast<size_t>(XXH32(sd.rawData(), sd.size(), static_cast<XXH32_hash_t>(seed)));
             break;
         }
 
@@ -966,7 +966,7 @@ void Value::hash_combine(size_t& seed,
             if (stringComparator) {
                 stringComparator->hash_combine(seed, sd);
             } else {
-                MurmurHash3_x86_32(sd.rawData(), sd.size(), seed, &seed);
+                seed = static_cast<size_t>(XXH32(sd.rawData(), sd.size(), static_cast<XXH32_hash_t>(seed)));
             }
             break;
         }
@@ -990,14 +990,14 @@ void Value::hash_combine(size_t& seed,
 
         case BinData: {
             StringData sd = getRawData();
-            MurmurHash3_x86_32(sd.rawData(), sd.size(), seed, &seed);
+            seed = static_cast<size_t>(XXH32(sd.rawData(), sd.size(), static_cast<XXH32_hash_t>(seed)));
             boost::hash_combine(seed, _storage.binDataType());
             break;
         }
 
         case RegEx: {
             StringData sd = getRawData();
-            MurmurHash3_x86_32(sd.rawData(), sd.size(), seed, &seed);
+            seed = static_cast<size_t>(XXH32(sd.rawData(), sd.size(), static_cast<XXH32_hash_t>(seed)));
             break;
         }
 

@@ -30,6 +30,7 @@
 #pragma once
 
 #include <MurmurHash3.h>
+#include <xxhash.h>
 #include <array>
 #include <cstddef>
 #include <string>
@@ -304,9 +305,7 @@ public:
      */
     struct Hash {
         std::size_t operator()(const HashBlock& HashBlock) const {
-            uint32_t hash;
-            MurmurHash3_x86_32(HashBlock.data(), HashBlock::kHashLength, 0, &hash);
-            return hash;
+            return static_cast<size_t>(XXH32(HashBlock.data(), HashBlock::kHashLength, 0));
         }
     };
 

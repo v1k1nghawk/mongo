@@ -35,6 +35,7 @@
 #include <string>
 
 #include <MurmurHash3.h>
+#include <xxhash.h>
 
 #include "mongo/base/data_type_endian.h"
 #include "mongo/base/data_view.h"
@@ -308,9 +309,7 @@ private:
     }
 
     static uint64_t hashStringData(StringData str) {
-        char hash[16];
-        MurmurHash3_x64_128(str.rawData(), str.size(), 0, hash);
-        return static_cast<size_t>(ConstDataView(hash).read<LittleEndian<std::uint64_t>>());
+        return static_cast<uint64_t>(XXH3_64bits_withSeed(str.rawData(), str.size(), 0));
     }
 };
 

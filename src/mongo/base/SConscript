@@ -86,6 +86,7 @@ env.CppUnitTest(
         'encoded_value_storage_test.cpp',
         'initializer_test.cpp',
         'murmurhash3_test.cpp',
+        'xxhash_test.cpp',
         'parse_number_test.cpp',
         'secure_allocator_test.cpp',
         'status_test.cpp',

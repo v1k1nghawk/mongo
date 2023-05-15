@@ -41,6 +41,7 @@
 #include "mongo/util/tcmalloc_parameters_gen.h"
 
 #include <MurmurHash3.h>
+#include <xxhash.h>
 #include <gperftools/malloc_hook.h>
 
 #if defined(_POSIX_VERSION) && defined(MONGO_CONFIG_HAVE_EXECINFO_BACKTRACE)
@@ -347,7 +348,7 @@ private:
             Hash hash;
             MONGO_STATIC_ASSERT_MSG(sizeof(frames) == sizeof(FrameInfo) * kMaxFramesPerStack,
                                     "frames array is not dense");
-            MurmurHash3_x86_32(frames.data(), numFrames * sizeof(FrameInfo), 0, &hash);
+            hash = static_cast<Hash>(XXH32(frames.data(), numFrames * sizeof(FrameInfo), static_cast<XXH32_hash_t>(0)));
             return hash;
         }
     };
@@ -389,7 +390,7 @@ private:
 
         Hash hash() {
             Hash hash = 0;
-            MurmurHash3_x86_32(&objPtr, sizeof(objPtr), 0, &hash);
+            hash = XXH32(&objPtr, sizeof(objPtr), 0);
             return hash;
         }
     };
@@ -629,9 +630,7 @@ private:
         // Sort the stacks and find enough stacks to account for at least 99% of the active bytes
         // deem any stack that has ever met this criterion as "important".
         // Using heap structure to avoid comparing elements that won't make the cut anyway.
-        auto heapCompare = [](auto&& a, auto&& b) {
-            return a.activeBytes > b.activeBytes;
-        };
+        auto heapCompare = [](auto&& a, auto&& b) { return a.activeBytes > b.activeBytes; };
         std::make_heap(heap.begin(), heapEnd, heapCompare);
 
         size_t threshold = totalActiveBytes * 0.99;
