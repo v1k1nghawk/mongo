@@ -1,0 +1,27 @@
+# -*- mode: python -*-
+
+import sys
+
+Import("env")
+
+env = env.Clone()
+
+# Define xxHash library build variables
+cpp_defines = {
+    'XXH_INLINE_ALL': '1',
+}
+
+env.Append(CPPDEFINES=cpp_defines)
+
+try:
+    if env.ToolchainIs('GCC', 'clang'):
+        env.Append(CCFLAGS=['-mavx512f'])
+except ValueError:
+    pass
+
+env.Library(
+    target='xxhash',
+    source=[
+        'xxhash.c',
+    ],
+)
