@@ -49,6 +49,7 @@ thirdPartyEnvironmentModifications = {
         'FORCEINCLUDES': ['js-config.h', ],
     },
     'murmurhash3': {'CPPPATH': ['#src/third_party/murmurhash3', ], },
+    'xxhash': {'CPPPATH': ['#src/third_party/xxHash', ], },
     'librdkafka': {
         'CPPPATH': [
             '#/src/third_party/librdkafka/dist/src',

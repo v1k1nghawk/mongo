@@ -35,6 +35,7 @@ env.InjectThirdParty(libraries=[
     'fmt',
     'immer',
     'murmurhash3',
+    'xxhash',
     'safeint',
     'stemmer',
     'variant',
