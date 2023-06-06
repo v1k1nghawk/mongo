@@ -118,7 +118,7 @@ private:
     // Technically speaking, _lk holds a Client* and _client is a superfluous variable. That said,
     // LockedClients will likely be optimized away and the extra variable is a cheap price to pay
     // for better developer comprehension.
-    stdx::unique_lock<Client> _lk;
+    alignas(64) stdx::unique_lock<Client> _lk;
     Client* _client = nullptr;
 };
 
@@ -706,8 +706,6 @@ private:
      */
     void _delistOperation(OperationContext* opCtx) noexcept;
 
-    Mutex _mutex = MONGO_MAKE_LATCH(/*HierarchicalAcquisitionLevel(2), */ "ServiceContext::_mutex");
-
     /**
      * The periodic runner.
      */
@@ -764,20 +762,22 @@ private:
      */
     SyncUnique<ClockSource> _preciseClockSource;
 
-    // Flag set to indicate that all operations are to be interrupted ASAP.
-    AtomicWord<bool> _globalKill{false};
+    bool _startupComplete = false;
+    stdx::condition_variable _startupCompleteCondVar;
 
     // protected by _mutex
     std::vector<KillOpListenerInterface*> _killOpListeners;
 
+    alignas(64) Mutex _mutex = MONGO_MAKE_LATCH(/*HierarchicalAcquisitionLevel(2), */ "ServiceContext::_mutex");
+
+    // Flag set to indicate that all operations are to be interrupted ASAP.
+    alignas(64) AtomicWord<bool> _globalKill{false};
+
     // When the catalog is restarted, the generation goes up by one each time.
-    AtomicWord<uint64_t> _catalogGeneration{0};
+    alignas(64) AtomicWord<uint64_t> _catalogGeneration{0};
 
     // Server-wide flag indicating whether users' writes are allowed.
-    AtomicWord<bool> _userWritesAllowed{true};
-
-    bool _startupComplete = false;
-    stdx::condition_variable _startupCompleteCondVar;
+    alignas(64) AtomicWord<bool> _userWritesAllowed{true};
 };
 
 /**

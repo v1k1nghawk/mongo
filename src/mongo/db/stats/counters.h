@@ -220,7 +220,7 @@ private:
         AtomicWord<long long> logicalBytesIn{0};
         AtomicWord<long long> requests{0};
     };
-    CacheCombinedExclusive<Together> _together{};
+    CacheExclusive<Together> _together{};
 
     CacheExclusive<AtomicWord<long long>> _logicalBytesOut{0};
 

@@ -333,7 +333,7 @@ public:
  * If you believe that you need logical synchronization at a user-facing level, you may need
  * a database Lock instead. Talk to Storage Execution.
  */
-class Mutex final : public Latch {
+class alignas(64) Mutex final : public Latch {
 public:
     void lock() override;
     void unlock() override;

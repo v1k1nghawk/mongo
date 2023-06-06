@@ -87,7 +87,9 @@ public:
     }
 
     /**
-     * Gets the current value of this AtomicWord using relaxed memory order.
+     * Gets the current value of this AtomicWord.
+     *
+     * Has relaxed semantics.
      */
     WordType loadRelaxed() const {
         return _value.load(std::memory_order_relaxed);
@@ -98,13 +100,6 @@ public:
      */
     void store(WordType newValue) {
         _value.store(newValue);
-    }
-
-    /**
-     * Sets the value of this AtomicWord to "newValue" using relaxed memory order.
-     */
-    void storeRelaxed(WordType newValue) {
-        _value.store(newValue, std::memory_order_relaxed);
     }
 
     /**
@@ -237,7 +232,7 @@ public:
  * Instantiations of AtomicWord must be trivially copyable.
  */
 template <typename T>
-class AtomicWord : public atomic_word_detail::Base<T> {
+class alignas(64) AtomicWord : public atomic_word_detail::Base<T> {
 public:
     using atomic_word_detail::Base<T>::Base;
 };

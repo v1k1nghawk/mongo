@@ -164,7 +164,7 @@ public:
 
 private:
     const DecorationRegistry<DecoratedType>* const _registry;
-    const std::unique_ptr<unsigned char[]> _decorationData =
+    alignas(64) const std::unique_ptr<unsigned char[]> _decorationData =
         std::make_unique<unsigned char[]>(_registry->getDecorationBufferSizeBytes());
 };
 
