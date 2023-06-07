@@ -394,7 +394,7 @@ JSString* ModuleLoader::fileAsString(JSContext* cx, JS::HandleString pathnameStr
     }
 
     File file;
-    file.open(pathname.get(), true);
+    file.open(pathname.get(), true, true);
     if (!file.is_open() || file.bad()) {
         JS_ReportErrorUTF8(cx, "can't open for reading %s", pathname.get());
         return nullptr;

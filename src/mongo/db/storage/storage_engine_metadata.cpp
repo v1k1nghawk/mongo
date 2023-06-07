@@ -72,7 +72,7 @@ const std::string kMetadataBasename = "storage.bson";
 bool fsyncFile(boost::filesystem::path path) {
     invariant(path.has_filename());
     File file;
-    file.open(path.string().c_str(), /*read-only*/ false, /*direct-io*/ false);
+    file.open(path.string().c_str(), /*read-only*/ false, /*direct-io*/ true);
     if (!file.is_open()) {
         return false;
     }

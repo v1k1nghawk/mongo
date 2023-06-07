@@ -51,7 +51,7 @@ namespace mongo {
 
 Status fsyncFile(const boost::filesystem::path& path) {
     File file;
-    file.open(path.string().c_str(), /*read-only*/ false, /*direct-io*/ false);
+    file.open(path.string().c_str(), /*read-only*/ false, /*direct-io*/ true);
     if (!file.is_open()) {
         return {ErrorCodes::FileOpenFailed,
                 str::stream() << "Failed to open file " << path.string()};
