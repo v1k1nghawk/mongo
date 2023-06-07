@@ -96,7 +96,7 @@ struct EventFDHolder {
 
 private:
     static int _initFd() {
-        int fd = ::eventfd(0, EFD_CLOEXEC);
+        int fd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
         // On error, -1 is returned and `errno` is set
         if (fd < 0) {
             auto ec = lastPosixError();

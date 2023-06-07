@@ -255,7 +255,7 @@ void* systemAllocate(std::size_t bytes) {
     //
     // skipping flags like MAP_LOCKED and MAP_POPULATE as linux-isms
     auto ptr =
-        mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MONGO_MAP_ANONYMOUS, -1, 0);
+        mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MONGO_MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
 
     if (!ptr) {
         auto str = fmtError("Failed to mmap");

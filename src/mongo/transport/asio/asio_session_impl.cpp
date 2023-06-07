@@ -218,8 +218,6 @@ Future<void> CommonAsioSession::sinkMessageImpl(Message message, const BatonHand
     _asyncOpState.start();
     return write(asio::buffer(message.buf(), message.size()), baton)
         .then([this, message /*keep the buffer alive*/]() {
-            if (_isIngressSession) {
-                networkCounter.hitPhysicalOut(message.size());
             }
         })
         .onCompletion([this](Status status) {
@@ -460,9 +458,6 @@ Future<Message> CommonAsioSession::sourceMessageImpl(const BatonHandle& baton) {
 
             if (msgLen == kHeaderSize) {
                 // This probably isn't a real case since all (current) messages have bodies.
-                if (_isIngressSession) {
-                    networkCounter.hitPhysicalIn(msgLen);
-                }
                 return Future<Message>::makeReady(Message(std::move(headerBuffer)));
             }
 
@@ -472,9 +467,6 @@ Future<Message> CommonAsioSession::sourceMessageImpl(const BatonHandle& baton) {
             MsgData::View msgView(buffer.get());
             return read(asio::buffer(msgView.data(), msgView.dataLen()), baton)
                 .then([this, buffer = std::move(buffer), msgLen]() mutable {
-                    if (_isIngressSession) {
-                        networkCounter.hitPhysicalIn(msgLen);
-                    }
                     return Message(std::move(buffer));
                 });
         })
