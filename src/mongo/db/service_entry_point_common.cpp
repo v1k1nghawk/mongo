@@ -476,10 +476,7 @@ StatusWith<repl::ReadConcernArgs> _extractReadConcern(OperationContext* opCtx,
  * uninitialized cluster time.
  */
 LogicalTime getClientOperationTime(OperationContext* opCtx) {
-    auto const replCoord = repl::ReplicationCoordinator::get(opCtx);
-    const bool isReplSet = replCoord->getSettings().isReplSet();
-
-    if (!isReplSet) {
+    if (!repl::ReplicationCoordinator::get(opCtx)->getSettings().isReplSet()) {
         return LogicalTime();
     }
 
