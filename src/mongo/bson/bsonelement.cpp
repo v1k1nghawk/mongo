@@ -756,9 +756,10 @@ int BSONElement::computeSize(int8_t type, const char* elem, int fieldNameSize) {
     // RegEx is two c-strings back-to-back.
     const char* p = elem + fieldNameSize + 1;
     size_t len1 = strlen(p);
-    p = p + len1 + 1;
-    size_t len2 = strlen(p);
-    return (len1 + 1 + len2 + 1) + fieldNameSize + 1;
+    size_t len1_copy = len1;
+    size_t len2 = 0;
+    while (len1_copy != 0) {len1_copy /= 10; ++len2;}
+    return 2*len1 + len2 + fieldNameSize + 4;
 }
 
 std::string BSONElement::toString(bool includeFieldName, bool full) const {
