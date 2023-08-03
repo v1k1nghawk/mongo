@@ -657,9 +657,7 @@ void BSONObj::getFields(unsigned n, const char** fieldNames, BSONElement* fields
 }
 
 BSONElement BSONObj::getField(StringData name) const {
-    BSONObjIterator i(*this);
-    while (i.more()) {
-        BSONElement e = i.next();
+    for (auto&& e : *this) {
         // We know that e has a cached field length since BSONObjIterator::next internally
         // called BSONElement::size on the BSONElement that it returned, so it is more
         // efficient to re-use that information by obtaining the field name as a
@@ -789,15 +787,13 @@ std::string BSONObj::hexDump() const {
 
 
 void BSONObj::elems(std::vector<BSONElement>& v) const {
-    BSONObjIterator i(*this);
-    while (i.more())
-        v.push_back(i.next());
+    for (auto&& e : *this)
+        v.push_back(e);
 }
 
 void BSONObj::elems(std::list<BSONElement>& v) const {
-    BSONObjIterator i(*this);
-    while (i.more())
-        v.push_back(i.next());
+    for (auto&& e : *this)
+        v.push_back(e);
 }
 
 BSONObj BSONObj::getObjectField(StringData name) const {
@@ -808,13 +804,8 @@ BSONObj BSONObj::getObjectField(StringData name) const {
 
 int BSONObj::nFields() const {
     int n = 0;
-    BSONObjIterator i(*this);
-    while (i.moreWithEOO()) {
-        BSONElement e = i.next();
-        if (e.eoo())
-            break;
-        n++;
-    }
+    for (auto&& e : *this)
+        ++n;
     return n;
 }
 
