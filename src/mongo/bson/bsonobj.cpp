@@ -804,8 +804,10 @@ BSONObj BSONObj::getObjectField(StringData name) const {
 
 int BSONObj::nFields() const {
     int n = 0;
-    for (auto&& e : *this)
+    for (auto&& e : *this) {
+        (void)e;
         ++n;
+    }
     return n;
 }
 
