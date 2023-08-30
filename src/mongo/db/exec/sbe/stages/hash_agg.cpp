@@ -297,7 +297,7 @@ void HashAggStage::spillRowToDisk(const value::MaterializedRow& key,
     auto rid = RecordId(kb.getBuffer(), kb.getSize());
 
     upsertToRecordStore(_opCtx, _recordStore->rs(), rid, val, typeBits, false /*update*/);
-    _specificStats.spilledRecords++;
+    ++_specificStats.spilledRecords;
 }
 
 void HashAggStage::spill(MemoryCheckData& mcd) {
@@ -344,7 +344,7 @@ void HashAggStage::checkMemoryUsageAndSpillIfNecessary(MemoryCheckData& mcd) {
         return;
     }
 
-    mcd.memoryCheckpointCounter++;
+    ++mcd.memoryCheckpointCounter;
     if (mcd.memoryCheckpointCounter < mcd.nextMemoryCheckpoint) {
         // We haven't reached the next checkpoint at which we estimate memory usage and decide if we
         // should spill.
@@ -388,7 +388,7 @@ void HashAggStage::checkMemoryUsageAndSpillIfNecessary(MemoryCheckData& mcd) {
 void HashAggStage::open(bool reOpen) {
     auto optTimer(getOptTimer(_opCtx));
 
-    _commonStats.opens++;
+    ++_commonStats.opens;
 
     if (!reOpen || _seekKeysAccessors.empty()) {
         _children[0]->open(_childOpened);
