@@ -68,8 +68,9 @@ public:
     // Declared in string_data_comparator_interface.h.
     class ComparatorInterface;
 
-    // Iterator type
+    // Iterators type
     using const_iterator = const char*;
+    using const_reverse_iterator = const char*;
 
     /** Constructs an empty StringData. */
     constexpr StringData() = default;
@@ -186,6 +187,12 @@ public:
     constexpr const_iterator end() const {
         return rawData() + size();
     }
+    constexpr const_reverse_iterator rbegin() const {
+        return rawData() + size();
+    }
+    constexpr const_reverse_iterator rend() const {
+        return rawData();
+    }
 
 private:
     const char* _data = nullptr;  // is not guaranted to be null terminated (see "notes" above)
@@ -214,7 +221,6 @@ constexpr bool operator>(StringData lhs, StringData rhs) {
 
 constexpr bool operator>=(StringData lhs, StringData rhs) {
     return lhs.compare(rhs) >= 0;
-}
 
 std::ostream& operator<<(std::ostream& stream, StringData value);
 
@@ -268,8 +274,8 @@ inline size_t StringData::find(StringData needle, size_t fromPos) const {
 
     mx -= needleSize;
 
-    for (size_t i = fromPos; i <= mx; i++) {
-        if (memcmp(_data + i, needle._data, needleSize) == 0)
+    for (size_t i = fromPos; i <= mx; ++i) {
+        if (std::equal(needle.begin(), needle.end(), begin() + i))
             return i;
     }
     return std::string::npos;
@@ -301,16 +307,16 @@ constexpr StringData StringData::substr(size_t pos, size_t n) const {
 
 inline bool StringData::startsWith(StringData prefix) const {
     // TODO: Investigate an optimized implementation.
-    return substr(0, prefix.size()) == prefix;
+    if (prefix.size() > size())
+        return false;
+    return std::equal(prefix.begin(), prefix.end(), begin());
 }
 
 inline bool StringData::endsWith(StringData suffix) const {
     // TODO: Investigate an optimized implementation.
-    const size_t thisSize = size();
-    const size_t suffixSize = suffix.size();
-    if (suffixSize > thisSize)
+    if (suffix.size() > size())
         return false;
-    return substr(thisSize - suffixSize) == suffix;
+    return std::equal(suffix.rbegin(), suffix.rend(), rbegin());
 }
 
 inline std::string& operator+=(std::string& lhs, StringData rhs) {

@@ -501,14 +501,16 @@ PlanState ScanStage::getNext() {
         if (_fieldAccessors.size() == 1) {
             // If we're only looking for 1 field, then it's more efficient to forgo the hashtable
             // and just use equality comparison.
-            auto name = StringData{_fields[0]};
             auto [tag, val] = [start, last, end, name] {
+                const char* currentFieldName;
+                size_t currentNameSize;
                 for (auto bsonElement = start; bsonElement != last;) {
-                    auto field = bson::fieldNameAndLength(bsonElement);
-                    if (field == name) {
-                        return bson::convertFrom<true>(bsonElement, end, field.size());
+                    currentFieldName = bson::fieldNameRaw(bsonElement);
+                    currentFieldNameSize = (currentFieldName != nullptr && currentFieldName[0] != '\0') ? std::strlen(currentFieldName) : 0;
+                    if (currentFieldName == _fields[0]) {
+                        return bson::convertFrom<true>(bsonElement, end, currentFieldNameSize);
                     }
-                    bsonElement = bson::advance(bsonElement, field.size());
+                    bsonElement = bson::advance(bsonElement, currentFieldNameSize);
                 }
                 return std::make_pair(value::TypeTags::Nothing, value::Value{0});
             }();
@@ -521,6 +523,8 @@ PlanState ScanStage::getNext() {
             }
 
             auto fieldsToMatch = _fieldAccessors.size();
+            const char* currentFieldName;
+            size_t currentNameSize;
             for (auto bsonElement = start; bsonElement != last;) {
                 // Oftentimes _fieldAccessors hashtable only has a few entries, but the object we're
                 // scanning could have dozens of fields. In this common scenario, most hashtable
@@ -529,23 +533,24 @@ PlanState ScanStage::getNext() {
                 // machine instructions) in front of the hashtable. When we "miss" in the bloom
                 // filter, we can quickly skip over a field without having to generate the hash for
                 // the field.
-                auto field = bson::fieldNameAndLength(bsonElement);
-                const size_t offset = computeFieldMaskOffset(field.rawData(), field.size());
+                currentFieldName = bson::fieldNameRaw(bsonElement);
+                currentFieldNameSize = (currentFieldName != nullptr && currentFieldName[0] != '\0') ? std::strlen(currentFieldName) : 0;
+                const size_t offset = computeFieldMaskOffset(currentFieldName, currentFieldNameSize);
                 if (!(_fieldsBloomFilter.maybeContainsHash(computeFieldMask(offset)))) {
-                    bsonElement = bson::advance(bsonElement, field.size());
+                    bsonElement = bson::advance(bsonElement, currentFieldNameSize);
                     continue;
                 }
 
-                auto accessor = getFieldAccessor(field, offset);
+                auto accessor = getFieldAccessor(currentFieldName, offset);
                 if (accessor != nullptr) {
-                    auto [tag, val] = bson::convertFrom<true>(bsonElement, end, field.size());
+                    auto [tag, val] = bson::convertFrom<true>(bsonElement, end, currentFieldNameSize);
                     accessor->reset(false, tag, val);
                     if ((--fieldsToMatch) == 0) {
                         // No need to scan any further so bail out early.
                         break;
                     }
                 }
-                bsonElement = bson::advance(bsonElement, field.size());
+                bsonElement = bson::advance(bsonElement, currentFieldNameSize);
             }
         }
 
