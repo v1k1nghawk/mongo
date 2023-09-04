@@ -501,9 +501,9 @@ PlanState ScanStage::getNext() {
         if (_fieldAccessors.size() == 1) {
             // If we're only looking for 1 field, then it's more efficient to forgo the hashtable
             // and just use equality comparison.
-            auto [tag, val] = [start, last, end, name] {
+            auto [tag, val] = [&] {
                 const char* currentFieldName;
-                size_t currentNameSize;
+                size_t currentFieldNameSize;
                 for (auto bsonElement = start; bsonElement != last;) {
                     currentFieldName = bson::fieldNameRaw(bsonElement);
                     currentFieldNameSize = (currentFieldName != nullptr && currentFieldName[0] != '\0') ? std::strlen(currentFieldName) : 0;
@@ -524,7 +524,7 @@ PlanState ScanStage::getNext() {
 
             auto fieldsToMatch = _fieldAccessors.size();
             const char* currentFieldName;
-            size_t currentNameSize;
+            size_t currentFieldNameSize;
             for (auto bsonElement = start; bsonElement != last;) {
                 // Oftentimes _fieldAccessors hashtable only has a few entries, but the object we're
                 // scanning could have dozens of fields. In this common scenario, most hashtable
