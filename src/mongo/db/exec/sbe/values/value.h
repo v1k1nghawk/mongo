@@ -1326,7 +1326,7 @@ struct BsonRegex {
 
     size_t byteSize() const {
         // Add 2 * sizeof(char) to account for the NULL bytes after 'pattern' and 'flags'.
-        return pattern.size() + sizeof(char) + flags.size() + sizeof(char);
+        return pattern.size() + flags.size() + 2 * sizeof(char);
     }
 
     StringData pattern;
@@ -1742,7 +1742,7 @@ public:
                 MONGO_UNREACHABLE;
             }
 
-            for (size_t i = 0; !atEnd() && i < index; i++) {
+            for (size_t i = 0; !atEnd() && i < index; ++i) {
                 advance();
             }
         }

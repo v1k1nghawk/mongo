@@ -44,7 +44,7 @@ namespace bson {
  *  - 128 (0x80) - the type is either unsupported or handled explicitly
  */
 // clang-format off
-static uint8_t advanceTable[] = {
+inline static const uint8_t advanceTable[] = {
 	0xff, // EOO
 	8,    // Double
 	0xff, // String
@@ -85,8 +85,7 @@ const char* advance(const char* be, size_t fieldNameSize) {
             be += ConstDataView(be).read<LittleEndian<uint32_t>>();
             if (advOffset == 0xff) {
                 be += 4;
-            } else if (advOffset == 0xfe) {
-            } else {
+            } else if (advOffset != 0xfe) {
                 if (static_cast<BSONType>(type) == BSONType::BinData) {
                     be += 5;
                 } else {

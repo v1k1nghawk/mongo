@@ -168,7 +168,7 @@ public:
         return _size;
     }
     constexpr bool empty() const {
-        return size() == 0;
+        return !size();
     }
     std::string toString() const {
         return std::string(_data, size());
@@ -193,11 +193,11 @@ private:
 };
 
 constexpr bool operator==(StringData lhs, StringData rhs) {
-    return (lhs.size() == rhs.size()) && (lhs.compare(rhs) == 0);
+    return (lhs.size() == rhs.size()) && (std::char_traits<char>::compare(lhs._data, rhs._data, lhs.size()) == 0);
 }
 
 constexpr bool operator!=(StringData lhs, StringData rhs) {
-    return !(lhs == rhs);
+    return lhs.compare(rhs);
 }
 
 constexpr bool operator<(StringData lhs, StringData rhs) {
@@ -268,8 +268,8 @@ inline size_t StringData::find(StringData needle, size_t fromPos) const {
 
     mx -= needleSize;
 
-    for (size_t i = fromPos; i <= mx; i++) {
-        if (memcmp(_data + i, needle._data, needleSize) == 0)
+    for (size_t i = fromPos; i <= mx; ++i) {
+        if (std::equal(needle.begin(), needle.end(), begin() + i))
             return i;
     }
     return std::string::npos;
@@ -301,32 +301,32 @@ constexpr StringData StringData::substr(size_t pos, size_t n) const {
 
 inline bool StringData::startsWith(StringData prefix) const {
     // TODO: Investigate an optimized implementation.
-    return substr(0, prefix.size()) == prefix;
+    if (prefix.size() > size())
+        return false;
+    return std::equal(prefix.begin(), prefix.end(), begin());
 }
 
 inline bool StringData::endsWith(StringData suffix) const {
     // TODO: Investigate an optimized implementation.
-    const size_t thisSize = size();
-    const size_t suffixSize = suffix.size();
-    if (suffixSize > thisSize)
+    if (suffix.size() > size())
         return false;
-    return substr(thisSize - suffixSize) == suffix;
+    return std::equal(suffix.begin(), suffix.end(), begin() + size() - suffix.size());
 }
 
 inline std::string& operator+=(std::string& lhs, StringData rhs) {
-    if (!rhs.empty())
+    if (rhs.size())
         lhs.append(rhs.rawData(), rhs.size());
     return lhs;
 }
 
 inline std::string operator+(std::string lhs, StringData rhs) {
-    if (!rhs.empty())
+    if (rhs.size())
         lhs.append(rhs.rawData(), rhs.size());
     return lhs;
 }
 
 inline std::string operator+(StringData lhs, std::string rhs) {
-    if (!lhs.empty())
+    if (lhs.size())
         rhs.insert(0, lhs.rawData(), lhs.size());
     return rhs;
 }
