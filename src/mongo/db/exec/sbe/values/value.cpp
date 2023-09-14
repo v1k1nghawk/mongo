@@ -660,23 +660,6 @@ std::pair<TypeTags, Value> compareValue(TypeTags lhsTag,
         auto result = comparator ? comparator->compare(lhsStr, rhsStr) : lhsStr.compare(rhsStr);
 
         return {TypeTags::NumberInt32, bitcastFrom<int32_t>(compareHelper(result, 0))};
-    } else if (lhsTag == TypeTags::Date && rhsTag == TypeTags::Date) {
-        auto result = compareHelper(bitcastTo<int64_t>(lhsValue), bitcastTo<int64_t>(rhsValue));
-        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(result)};
-    } else if (lhsTag == TypeTags::Timestamp && rhsTag == TypeTags::Timestamp) {
-        auto result = compareHelper(bitcastTo<uint64_t>(lhsValue), bitcastTo<uint64_t>(rhsValue));
-        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(result)};
-    } else if (lhsTag == TypeTags::Boolean && rhsTag == TypeTags::Boolean) {
-        auto result = compareHelper(bitcastTo<bool>(lhsValue), bitcastTo<bool>(rhsValue));
-        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(result)};
-    } else if (lhsTag == TypeTags::Null && rhsTag == TypeTags::Null) {
-        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(0)};
-    } else if (lhsTag == TypeTags::MinKey && rhsTag == TypeTags::MinKey) {
-        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(0)};
-    } else if (lhsTag == TypeTags::MaxKey && rhsTag == TypeTags::MaxKey) {
-        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(0)};
-    } else if (lhsTag == TypeTags::bsonUndefined && rhsTag == TypeTags::bsonUndefined) {
-        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(0)};
     } else if (isArray(lhsTag) && isArray(rhsTag)) {
         // ArraySets carry semantics of an unordered set, so we cannot define a deterministic
         // less or greater operations on them, but only compare for equality. Comparing an
@@ -766,59 +749,91 @@ std::pair<TypeTags, Value> compareValue(TypeTags lhsTag,
                              getRawPointerView(rhsValue) + sizeof(uint32_t),
                              lsz + 1);
         return {TypeTags::NumberInt32, bitcastFrom<int32_t>(compareHelper(result, 0))};
-    } else if (lhsTag == TypeTags::ksValue && rhsTag == TypeTags::ksValue) {
-        auto result = getKeyStringView(lhsValue)->compare(*getKeyStringView(rhsValue));
-        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(result)};
-    } else if (lhsTag == TypeTags::Nothing && rhsTag == TypeTags::Nothing) {
-        // Special case for Nothing in a hash table (group) and sort comparison.
-        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(0)};
-    } else if (lhsTag == TypeTags::RecordId && rhsTag == TypeTags::RecordId) {
-        int32_t result = getRecordIdView(lhsValue)->compare(*getRecordIdView(rhsValue));
-        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(result)};
-    } else if (lhsTag == TypeTags::bsonRegex && rhsTag == TypeTags::bsonRegex) {
-        auto lhsRegex = getBsonRegexView(lhsValue);
-        auto rhsRegex = getBsonRegexView(rhsValue);
-        if (auto result = lhsRegex.pattern.compare(rhsRegex.pattern); result != 0) {
-            return {TypeTags::NumberInt32, bitcastFrom<int32_t>(compareHelper(result, 0))};
-        }
+    } else if (lhsTag == rhsTag) {
+        switch(lhsTag) {
+            case TypeTags::Nothing:
+                // Special case for Nothing in a hash table (group) and sort comparison.
+                return {TypeTags::NumberInt32, bitcastFrom<int32_t>(0)};
+            case TypeTags::Date:
+                {
+                    auto result = compareHelper(bitcastTo<int64_t>(lhsValue), bitcastTo<int64_t>(rhsValue));
+                    return {TypeTags::NumberInt32, bitcastFrom<int32_t>(result)};
+                }
+            case TypeTags::Timestamp:
+                {
+                    auto result = compareHelper(bitcastTo<uint64_t>(lhsValue), bitcastTo<uint64_t>(rhsValue));
+                    return {TypeTags::NumberInt32, bitcastFrom<int32_t>(result)};
+                }
+            case TypeTags::Boolean:
+                {
+                    auto result = compareHelper(bitcastTo<bool>(lhsValue), bitcastTo<bool>(rhsValue));
+                    return {TypeTags::NumberInt32, bitcastFrom<int32_t>(result)};
+                }
+            case TypeTags::RecordId:
+                {
+                    int32_t result = getRecordIdView(lhsValue)->compare(*getRecordIdView(rhsValue));
+                    return {TypeTags::NumberInt32, bitcastFrom<int32_t>(result)};
+                }
+            case TypeTags::ksValue:
+                {
+                    auto result = getKeyStringView(lhsValue)->compare(*getKeyStringView(rhsValue));
+                    return {TypeTags::NumberInt32, bitcastFrom<int32_t>(result)};
+                }
+            case TypeTags::bsonRegex:
+                {
+                    auto lhsRegex = getBsonRegexView(lhsValue);
+                    auto rhsRegex = getBsonRegexView(rhsValue);
+                    if (auto result = lhsRegex.pattern.compare(rhsRegex.pattern); result != 0) {
+                        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(compareHelper(result, 0))};
+                    }
+                    auto result = lhsRegex.flags.compare(rhsRegex.flags);
+                    return {TypeTags::NumberInt32, bitcastFrom<int32_t>(compareHelper(result, 0))};
+                }
+            case TypeTags::bsonJavascript:
+                {
+                    auto lhsCode = getBsonJavascriptView(lhsValue);
+                    auto rhsCode = getBsonJavascriptView(rhsValue);
+                    auto result = compareHelper(lhsCode, rhsCode);
+                    return {TypeTags::NumberInt32, result};
+                }
+            case TypeTags::bsonDBPointer:
+                {
+                    // To match the existing behavior from the classic execution engine, we intentionally
+                    // compare the sizes of 'ns' fields first, and then only if the sizes are equal do we
+                    // compare the contents of the 'ns' fields.
+                    auto lhsDBPtr = getBsonDBPointerView(lhsValue);
+                    auto rhsDBPtr = getBsonDBPointerView(rhsValue);
+                    if (lhsDBPtr.ns.size() != rhsDBPtr.ns.size()) {
+                        return {TypeTags::NumberInt32,
+                                bitcastFrom<int32_t>(compareHelper(lhsDBPtr.ns.size(), rhsDBPtr.ns.size()))};
+                    }
 
-        auto result = lhsRegex.flags.compare(rhsRegex.flags);
-        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(compareHelper(result, 0))};
-    } else if (lhsTag == TypeTags::bsonJavascript && rhsTag == TypeTags::bsonJavascript) {
-        auto lhsCode = getBsonJavascriptView(lhsValue);
-        auto rhsCode = getBsonJavascriptView(rhsValue);
-        auto result = compareHelper(lhsCode, rhsCode);
-        return {TypeTags::NumberInt32, result};
-    } else if (lhsTag == TypeTags::bsonDBPointer && rhsTag == TypeTags::bsonDBPointer) {
-        // To match the existing behavior from the classic execution engine, we intentionally
-        // compare the sizes of 'ns' fields first, and then only if the sizes are equal do we
-        // compare the contents of the 'ns' fields.
-        auto lhsDBPtr = getBsonDBPointerView(lhsValue);
-        auto rhsDBPtr = getBsonDBPointerView(rhsValue);
-        if (lhsDBPtr.ns.size() != rhsDBPtr.ns.size()) {
-            return {TypeTags::NumberInt32,
-                    bitcastFrom<int32_t>(compareHelper(lhsDBPtr.ns.size(), rhsDBPtr.ns.size()))};
-        }
+                    if (auto result = lhsDBPtr.ns.compare(rhsDBPtr.ns); result != 0) {
+                        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(compareHelper(result, 0))};
+                    }
 
-        if (auto result = lhsDBPtr.ns.compare(rhsDBPtr.ns); result != 0) {
-            return {TypeTags::NumberInt32, bitcastFrom<int32_t>(compareHelper(result, 0))};
-        }
+                    auto result = memcmp(lhsDBPtr.id, rhsDBPtr.id, sizeof(ObjectIdType));
+                    return {TypeTags::NumberInt32, bitcastFrom<int32_t>(compareHelper(result, 0))};
+                }
+            case TypeTags::bsonCodeWScope:
+                {
+                    auto lhsCws = getBsonCodeWScopeView(lhsValue);
+                    auto rhsCws = getBsonCodeWScopeView(rhsValue);
+                    if (auto result = lhsCws.code.compare(rhsCws.code); result != 0) {
+                        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(compareHelper(result, 0))};
+                    }
 
-        auto result = memcmp(lhsDBPtr.id, rhsDBPtr.id, sizeof(ObjectIdType));
-        return {TypeTags::NumberInt32, bitcastFrom<int32_t>(compareHelper(result, 0))};
-    } else if (lhsTag == TypeTags::bsonCodeWScope && rhsTag == TypeTags::bsonCodeWScope) {
-        auto lhsCws = getBsonCodeWScopeView(lhsValue);
-        auto rhsCws = getBsonCodeWScopeView(rhsValue);
-        if (auto result = lhsCws.code.compare(rhsCws.code); result != 0) {
-            return {TypeTags::NumberInt32, bitcastFrom<int32_t>(compareHelper(result, 0))};
+                    // Special string comparison semantics do not apply to strings nested inside the
+                    // CodeWScope scope object, so we do not pass through the string comparator.
+                    return compareValue(TypeTags::bsonObject,
+                                        bitcastFrom<const char*>(lhsCws.scope),
+                                        TypeTags::bsonObject,
+                                        bitcastFrom<const char*>(rhsCws.scope));
+                }
+            default:
+                // TypeTags::Null, TypeTags::MinKey, TypeTags::MaxKey, TypeTags::bsonUndefined
+                return {TypeTags::NumberInt32, bitcastFrom<int32_t>(0)};
         }
-
-        // Special string comparison semantics do not apply to strings nested inside the
-        // CodeWScope scope object, so we do not pass through the string comparator.
-        return compareValue(TypeTags::bsonObject,
-                            bitcastFrom<const char*>(lhsCws.scope),
-                            TypeTags::bsonObject,
-                            bitcastFrom<const char*>(rhsCws.scope));
     } else {
         // Different types.
         if (lhsTag == TypeTags::Nothing || rhsTag == TypeTags::Nothing) {

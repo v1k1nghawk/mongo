@@ -193,7 +193,7 @@ private:
 };
 
 constexpr bool operator==(StringData lhs, StringData rhs) {
-    return (lhs.size() == rhs.size()) && (lhs.compare(rhs) == 0);
+    return (lhs.size() == rhs.size()) && (std::char_traits<char>::compare(lhs.rawData(), rhs.rawData(), lhs.size()) == 0);
 }
 
 constexpr bool operator!=(StringData lhs, StringData rhs) {
@@ -268,7 +268,7 @@ inline size_t StringData::find(StringData needle, size_t fromPos) const {
 
     mx -= needleSize;
 
-    for (size_t i = fromPos; i <= mx; i++) {
+    for (size_t i = fromPos; i <= mx; ++i) {
         if (memcmp(_data + i, needle._data, needleSize) == 0)
             return i;
     }
@@ -301,7 +301,10 @@ constexpr StringData StringData::substr(size_t pos, size_t n) const {
 
 inline bool StringData::startsWith(StringData prefix) const {
     // TODO: Investigate an optimized implementation.
-    return substr(0, prefix.size()) == prefix;
+    const size_t prefixSize = prefix.size();
+    if (prefixSize > size())
+        return false;
+    return std::char_traits<char>::compare(_data, prefix.rawData(), prefixSize) == 0;
 }
 
 inline bool StringData::endsWith(StringData suffix) const {
@@ -310,7 +313,7 @@ inline bool StringData::endsWith(StringData suffix) const {
     const size_t suffixSize = suffix.size();
     if (suffixSize > thisSize)
         return false;
-    return substr(thisSize - suffixSize) == suffix;
+    return std::char_traits<char>::compare(_data + thisSize - suffixSize, suffix.rawData(), suffixSize) == 0;
 }
 
 inline std::string& operator+=(std::string& lhs, StringData rhs) {
